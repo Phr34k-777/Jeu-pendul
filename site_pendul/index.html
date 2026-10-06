@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Pendu</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg: #0d0d0d;
+    --bg2: #161616;
+    --bg3: #1f1f1f;
+    --card: #1a1a1a;
+    --border: #2a2a2a;
+    --text: #f0ede6;
+    --text2: #888;
+    --accent: #e8c547;
+    --accent2: #e87547;
+    --green: #47e8a0;
+    --red: #e84747;
+    --shadow: rgba(232,197,71,0.15);
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f0e8;
+    --bg2: #ede8dc;
+    --bg3: #e0d8c8;
+    --card: #fff8ee;
+    --border: #d0c8b8;
+    --text: #1a1410;
+    --text2: #888;
+    --accent: #c4860a;
+    --accent2: #c44a0a;
+    --green: #0a9955;
+    --red: #c41a1a;
+    --shadow: rgba(196,134,10,0.18);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background 0.4s, color 0.4s;
+  }
+
+  /* NOISE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 10;
+  }
+
+  .logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text); }
+
+  .header-controls { display: flex; gap: 12px; align-items: center; }
+
+  .btn-icon {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .btn-icon:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.05); }
+
+  /* MAIN LAYOUT */
+  main {
+    position: relative;
+    z-index: 10;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 30px 24px;
+  }
+
+  /* SCREEN MANAGEMENT */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── INTRO SCREEN ── */
+  #screen-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 75vh;
+    gap: 32px;
+    text-align: center;
+  }
+  #screen-intro.active { display: flex; }
+
+  .intro-title {
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -3px;
+  }
+  .intro-title .accent { color: var(--accent); }
+
+  .intro-sub {
+    color: var(--text2);
+    font-size: 1rem;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .intro-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 40px;
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .field-label {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text2);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 6px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"].error { border-color: var(--red); }
+
+  .error-msg {
+    font-size: 0.78rem;
+    color: var(--red);
+    font-family: 'Space Mono', monospace;
+    min-height: 18px;
+  }
+
+  /* DIFFICULTY SELECTOR */
+  .diff-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .diff-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 10px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .diff-btn:hover, .diff-btn.selected {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg);
+  }
+  .diff-btn.selected { background: var(--accent); color: #000; font-weight: 700; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    width: 100%;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--shadow); }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ── GAME SCREEN ── */
+  #screen-game.active { display: block; }
+
+  .game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .player-tag {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 8px 18px;
+  }
+  .player-tag .avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #000;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+  }
+  .player-name { font-weight: 700; font-size: 0.9rem; }
+  .player-pts {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+
+  .chances-bar-wrap { display: flex; align-items: center; gap: 10px; }
+  .chances-label { font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--text2); }
+  .chances-pips { display: flex; gap: 5px; }
+  .pip {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    transition: background 0.3s, transform 0.3s;
+  }
+  .pip.lost { background: var(--red); transform: scale(0.7); }
+
+  /* GAME BODY */
+  .game-body {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* ══════════════════════════════════
+     RESPONSIVE — TABLET (≤ 768px)
+  ══════════════════════════════════ */
+  @media (max-width: 768px) {
+    header { padding: 14px 20px; }
+    .logo { font-size: 1.3rem; }
+
+    main { padding: 20px 16px; }
+
+    .intro-card { padding: 28px 24px; max-width: 100%; }
+    .intro-title { letter-spacing: -2px; }
+
+    .game-header { gap: 8px; }
+    .player-tag { padding: 6px 14px; }
+
+    .game-body {
+      grid-template-columns: 240px 1fr;
+      gap: 16px;
+    }
+
+    .key-btn { width: 34px; height: 34px; font-size: 0.8rem; }
+
+    .end-score { font-size: 2.2rem; }
+    .end-actions { flex-direction: column; align-items: center; }
+    .btn-outline, .btn-primary { width: 100%; max-width: 280px; text-align: center; }
+
+    .scores-title { font-size: 1.4rem; }
+    .scores-table td, .scores-table th { padding: 10px 10px; font-size: 0.8rem; }
+  }
+
+  /* ══════════════════════════════════
+     RESPONSIVE — MOBILE (≤ 600px)
+  ══════════════════════════════════ */
+  @media (max-width: 600px) {
+    header { padding: 12px 16px; }
+    .logo { font-size: 1.1rem; }
+    .btn-icon { width: 36px; height: 36px; font-size: 1rem; }
+
+    main { padding: 16px 12px; }
+
+    /* INTRO */
+    #screen-intro { gap: 20px; min-height: 80vh; }
+    .intro-title { font-size: clamp(2.4rem, 12vw, 3.5rem); letter-spacing: -1px; }
+    .intro-card { padding: 22px 18px; border-radius: 12px; }
+    .diff-grid { gap: 6px; }
+    .diff-btn { padding: 8px 4px; font-size: 0.65rem; }
+
+    /* GAME */
+    .game-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .game-header > * { width: 100%; }
+    .chances-bar-wrap { justify-content: flex-start; }
+    .pips-container { flex-wrap: wrap; }
+
+    .game-body {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    /* Gallows plus compact sur mobile */
+    .gallows-card { padding: 16px; border-radius: 12px; }
+    #gallows-svg { max-width: 160px; }
+
+    /* Mot à trouver */
+    .letter-box { width: 34px; height: 42px; font-size: 1.2rem; }
+    .word-display { gap: 6px; }
+
+    /* Clavier adaptatif mobile */
+    .keyboard { gap: 5px; justify-content: center; }
+    .key-btn {
+      width: calc((100% - 5 * 5px) / 6.5);
+      min-width: 32px;
+      max-width: 40px;
+      height: 40px;
+      font-size: 0.78rem;
+      border-radius: 5px;
+    }
+
+    /* END SCREEN */
+    #screen-end { gap: 20px; min-height: 75vh; padding: 0 8px; }
+    .end-result { font-size: clamp(1.8rem, 9vw, 2.5rem); }
+    .end-score { font-size: 2rem; }
+    .end-actions { width: 100%; }
+    .end-actions .btn-primary,
+    .end-actions .btn-outline { max-width: 100%; }
+
+    /* SCORES */
+    .scores-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .scores-title { font-size: 1.2rem; }
+    .scores-table th:last-child,
+    .scores-table td:last-child { display: none; } /* cache colonne difficulté sur mobile */
+    .scores-table td, .scores-table th { padding: 10px 8px; font-size: 0.78rem; }
+
+    /* TOAST */
+    .toast { font-size: 0.8rem; padding: 10px 18px; max-width: 90vw; white-space: normal; text-align: center; }
+  }
+
+  /* ══════════════════════════════════
+     RESPONSIVE — VERY SMALL (≤ 380px)
+  ══════════════════════════════════ */
+  @media (max-width: 380px) {
+    .intro-title { font-size: 2rem; }
+    .key-btn { min-width: 28px; height: 36px; font-size: 0.7rem; }
+    .letter-box { width: 28px; height: 36px; font-size: 1rem; }
+    #gallows-svg { max-width: 130px; }
+    .diff-btn small { display: none; }
+  }
+
+  /* GALLOWS */
+  .gallows-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  #gallows-svg {
+    width: 100%;
+    max-width: 220px;
+  }
+
+  /* RIGHT PANEL */
+  .right-panel { display: flex; flex-direction: column; gap: 20px; }
+
+  /* WORD DISPLAY */
+  .word-display {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .letter-box {
+    width: 40px; height: 48px;
+    border-bottom: 3px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+    color: var(--text);
+    transition: all 0.3s;
+    position: relative;
+  }
+  .letter-box.revealed {
+    animation: pop 0.3s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(1.4); color: var(--green); }
+    100% { transform: scale(1); }
+  }
+
+  /* KEYBOARD */
+  .keyboard-section {}
+  .keyboard-label {
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text2);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 10px;
+  }
+  .keyboard {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .key-btn {
+    width: 38px; height: 38px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .key-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+  .key-btn:disabled { opacity: 0.25; cursor: not-allowed; transform: none; }
+  .key-btn.correct { background: var(--green); color: #000; border-color: var(--green); }
+  .key-btn.wrong { background: var(--red); color: #fff; border-color: var(--red); }
+
+  /* MESSAGE TOAST */
+  .toast {
+    position: fixed;
+    top: 80px; left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 100;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.fail { border-color: var(--red); color: var(--red); }
+  .toast.info { border-color: var(--accent); color: var(--accent); }
+
+  /* ── END SCREEN ── */
+  #screen-end.active { display: flex; }
+  #screen-end {
+    flex-direction: column;
+    align-items: center;
+    min-height: 70vh;
+    justify-content: center;
+    gap: 28px;
+    text-align: center;
+  }
+
+  .end-result {
+    font-size: clamp(2rem, 6vw, 4rem);
+    font-weight: 800;
+    letter-spacing: -2px;
+  }
+  .end-result.win { color: var(--green); }
+  .end-result.lose { color: var(--red); }
+
+  .end-word {
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    color: var(--text2);
+  }
+  .end-word span { color: var(--accent); font-weight: 700; font-size: 1.2rem; }
+
+  .end-score {
+    font-size: 3rem;
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    color: var(--accent);
+  }
+  .end-score-label { font-size: 0.75rem; letter-spacing: 3px; color: var(--text2); font-family: 'Space Mono', monospace; text-transform: uppercase; }
+
+  .end-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── SCORES SCREEN ── */
+  #screen-scores.active { display: block; }
+
+  .scores-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .scores-title { font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; }
+
+  .scores-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Space Mono', monospace;
+  }
+  .scores-table th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+  }
+  .scores-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .scores-table tr:hover td { background: var(--bg3); }
+  .rank-1 td:first-child { color: #ffd700; }
+  .rank-2 td:first-child { color: #c0c0c0; }
+  .rank-3 td:first-child { color: #cd7f32; }
+  .score-pts { color: var(--accent); font-weight: 700; }
+  .current-player td { background: var(--bg3); }
+
+  /* DIFFICULTY BADGE */
+  .diff-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .diff-badge.facile { background: rgba(71,232,160,0.15); color: var(--green); }
+  .diff-badge.normal { background: rgba(232,197,71,0.15); color: var(--accent); }
+  .diff-badge.difficile { background: rgba(232,71,71,0.15); color: var(--red); }
+
+  /* GALLOWS SVG STYLES */
+  .gallows-line { stroke: var(--text); stroke-width: 3; stroke-linecap: round; transition: stroke 0.3s; }
+  .body-part { stroke: var(--red); stroke-width: 3; stroke-linecap: round; fill: none; opacity: 0; transition: opacity 0.3s; }
+  .body-part.show { opacity: 1; animation: bodyAppear 0.3s ease; }
+  @keyframes bodyAppear {
+    from { stroke-dashoffset: 100; opacity: 0; }
+    to { stroke-dashoffset: 0; opacity: 1; }
+  }
+
+  /* WIGGLE ANIMATION ON WRONG ANSWER */
+  @keyframes wiggle {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .wiggle { animation: wiggle 0.4s ease; }
+
+  /* CONFETTI */
+  .confetti-piece {
+    position: fixed;
+    width: 10px; height: 10px;
+    top: -10px;
+    border-radius: 2px;
+    animation: confettiFall linear forwards;
+    z-index: 999;
+    pointer-events: none;
+  }
+  @keyframes confettiFall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<header>
+  <div class="logo">LE<span>PENDU</span></div>
+  <div class="header-controls">
+    <button class="btn-icon" id="btn-scores" title="Scores">🏆</button>
+    <button class="btn-icon" id="btn-sound" title="Son">🔊</button>
+    <button class="btn-icon" id="btn-theme" title="Thème">🌙</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── INTRO SCREEN ── -->
+  <div class="screen active" id="screen-intro">
+    <div>
+      <p class="intro-sub">Jeu classique</p>
+      <h1 class="intro-title">Le <span class="accent">Pendu</span></h1>
+    </div>
+    <div class="intro-card">
+      <div>
+        <div class="field-label">Votre nom</div>
+        <input type="text" id="input-name" placeholder="Ex: Alice" maxlength="20">
+        <div class="error-msg" id="name-error"></div>
+      </div>
+      <div>
+        <div class="field-label">Difficulté</div>
+        <div class="diff-grid">
+          <button class="diff-btn selected" data-diff="facile">😊 Facile<br><small>10 chances</small></button>
+          <button class="diff-btn" data-diff="normal">😐 Normal<br><small>8 chances</small></button>
+          <button class="diff-btn" data-diff="difficile">💀 Difficile<br><small>5 chances</small></button>
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-start">Commencer →</button>
+    </div>
+  </div>
+
+  <!-- ── GAME SCREEN ── -->
+  <div class="screen" id="screen-game">
+    <div class="game-header">
+      <div class="player-tag">
+        <div class="avatar" id="avatar-letter">A</div>
+        <div>
+          <div class="player-name" id="display-name">Joueur</div>
+          <div class="player-pts"><span id="display-score">0</span> pts</div>
+        </div>
+      </div>
+      <div class="chances-bar-wrap">
+        <span class="chances-label">Chances</span>
+        <div class="chances-pips" id="pips-container"></div>
+      </div>
+      <span class="diff-badge" id="diff-badge">Normal</span>
+    </div>
+
+    <div class="game-body">
+      <!-- GALLOWS -->
+      <div class="gallows-card">
+        <svg id="gallows-svg" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+          <!-- Structure du gibet -->
+          <line class="gallows-line" x1="20" y1="210" x2="180" y2="210"/>
+          <line class="gallows-line" x1="60" y1="210" x2="60" y2="20"/>
+          <line class="gallows-line" x1="60" y1="20" x2="130" y2="20"/>
+          <line class="gallows-line" x1="130" y1="20" x2="130" y2="45"/>
+          <!-- Corps (cachés par défaut) -->
+          <circle class="body-part" id="bp-head" cx="130" cy="60" r="16"/>
+          <line  class="body-part" id="bp-body" x1="130" y1="76" x2="130" y2="130"/>
+          <line  class="body-part" id="bp-larm" x1="130" y1="90" x2="105" y2="115"/>
+          <line  class="body-part" id="bp-rarm" x1="130" y1="90" x2="155" y2="115"/>
+          <line  class="body-part" id="bp-lleg" x1="130" y1="130" x2="105" y2="165"/>
+          <line  class="body-part" id="bp-rleg" x1="130" y1="130" x2="155" y2="165"/>
+          <!-- Face triste (affiché quand perdu) -->
+          <g id="sad-face" style="opacity:0; transition: opacity 0.5s;">
+            <line class="body-part show" x1="124" y1="57" x2="124" y2="62" style="stroke:var(--red);"/>
+            <line class="body-part show" x1="136" y1="57" x2="136" y2="62" style="stroke:var(--red);"/>
+            <path class="body-part show" d="M123 68 Q130 63 137 68" style="stroke:var(--red);"/>
+          </g>
+        </svg>
+        <div id="gallows-msg" style="font-family:'Space Mono',monospace; font-size:0.75rem; color:var(--text2); text-align:center;"></div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="right-panel">
+        <div>
+          <div class="keyboard-label">Mot à trouver</div>
+          <div class="word-display" id="word-display"></div>
+        </div>
+        <div class="keyboard-section">
+          <div class="keyboard-label">Clavier</div>
+          <div class="keyboard" id="keyboard"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── END SCREEN ── -->
+  <div class="screen" id="screen-end">
+    <div class="end-result" id="end-result-title">Gagné !</div>
+    <div class="end-word">Le mot était : <span id="end-word-reveal">—</span></div>
+    <div>
+      <div class="end-score-label">Points gagnés cette manche</div>
+      <div class="end-score" id="end-points">+0</div>
+    </div>
+    <div>
+      <div class="end-score-label">Score total — <span id="end-player-name">Joueur</span></div>
+      <div class="end-score" id="end-total-score">0</div>
+    </div>
+    <div class="end-actions">
+      <button class="btn-primary" id="btn-rejouer" style="width:auto; padding: 14px 32px;">Rejouer</button>
+      <button class="btn-outline" id="btn-scores-end">Voir les scores 🏆</button>
+      <button class="btn-outline" id="btn-quitter">Quitter</button>
+    </div>
+  </div>
+
+  <!-- ── SCORES SCREEN ── -->
+  <div class="screen" id="screen-scores">
+    <div class="scores-header">
+      <div class="scores-title">🏆 Tableau des scores</div>
+      <button class="btn-outline" id="btn-back-scores">← Retour</button>
+    </div>
+    <table class="scores-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Joueur</th>
+          <th>Score</th>
+          <th>Difficulté</th>
+        </tr>
+      </thead>
+      <tbody id="scores-tbody"></tbody>
+    </table>
+    <div id="no-scores" style="text-align:center; color:var(--text2); font-family:'Space Mono',monospace; font-size:0.85rem; padding:40px; display:none;">
+      Aucun score enregistré pour l'instant.
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ──────────────────────────────────────
+//  DONNÉES
+// ──────────────────────────────────────
+const LISTE_MOTS = [
+  "armoire","boucle","buisson","bureau","chaise","carton","couteau",
+  "fichier","garage","glace","journal","kiwi","lampe","liste",
+  "montagne","remise","sandale","taxi","vampire","volant",
+  "fenetre","ballon","nuage","riviere","foret","avion","bateau",
+  "chateau","dragon","etoile","fusee","guitare","hibou","igloo",
+  "jardin","koala","losange","moulin","noisette","ocean","piano",
+  "quartz","robinet","soleil","tigre","ukulele","verre","wagon",
+  "xylophone","yaourt","zeppelin"
+];
+
+const DIFFICULTE = {
+  facile: { chances: 10, label: "Facile" },
+  normal: { chances: 8,  label: "Normal" },
+  difficile: { chances: 5, label: "Difficile" }
+};
+
+const BODY_PARTS = ["bp-head","bp-body","bp-larm","bp-rarm","bp-lleg","bp-rleg"];
+
+const GALLOWS_MSGS = [
+  "", "Attention...", "Ça commence mal 😬",
+  "Courage !", "Mi-chemin...", "Soyez prudent !",
+  "Presque pendu !", "Dernière chance !"
+];
+
+// ──────────────────────────────────────
+//  STATE
+// ──────────────────────────────────────
+let state = {
+  player: "",
+  difficulty: "facile",
+  scores: {},       // { name: {score, diff} }
+  currentScore: 0,
+  motActuel: "",
+  lettresTrouvees: new Set(),
+  nbChances: 0,
+  maxChances: 0,
+  soundOn: true,
+  theme: "dark",
+  previousScreen: "intro"
+};
+
+// ──────────────────────────────────────
+//  UTILS
+// ──────────────────────────────────────
+function loadScores() {
+  try {
+    const raw = localStorage.getItem("pendu_scores");
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function saveScores() {
+  localStorage.setItem("pendu_scores", JSON.stringify(state.scores));
+}
+
+function normalizeStr(str) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function choixMot() {
+  return LISTE_MOTS[Math.floor(Math.random() * LISTE_MOTS.length)];
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ──────────────────────────────────────
+//  AUDIO
+// ──────────────────────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+
+function playTone(freq, type, duration, gain=0.3) {
+  if (!state.soundOn) return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gainNode.gain.setValueAtTime(gain, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function soundCorrect() { playTone(600, 'sine', 0.2); setTimeout(() => playTone(900, 'sine', 0.2), 100); }
+function soundWrong()   { playTone(200, 'sawtooth', 0.3); }
+function soundWin()     { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.4),i*120)); }
+function soundLose()    { [300,200,150].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',0.4),i*150)); }
+
+// ──────────────────────────────────────
+//  TOAST
+// ──────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type="info", duration=2000) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `toast show ${type}`;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ──────────────────────────────────────
+//  CONFETTI
+// ──────────────────────────────────────
+function spawnConfetti() {
+  const colors = ["#e8c547","#47e8a0","#e87547","#e84747","#4788e8","#e847c5"];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    el.style.animationDelay = (Math.random() * 0.5) + 's';
+    el.style.width = el.style.height = (6 + Math.random() * 8) + 'px';
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+// ──────────────────────────────────────
+//  INTRO
+// ──────────────────────────────────────
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    state.difficulty = btn.dataset.diff;
+  });
+});
+
+document.getElementById('btn-start').addEventListener('click', () => {
+  const nameInput = document.getElementById('input-name');
+  const errEl = document.getElementById('name-error');
+  const name = nameInput.value.trim();
+
+  if (!name || !name.match(/^[a-zA-ZÀ-ÿ0-9]{4,}$/)) {
+    nameInput.classList.add('error');
+    errEl.textContent = "Nom invalide (4 caractères min, lettres/chiffres uniquement)";
+    nameInput.focus();
+    return;
+  }
+  nameInput.classList.remove('error');
+  errEl.textContent = '';
+
+  state.player = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  if (!state.scores[state.player]) {
+    state.scores[state.player] = { score: 0, diff: state.difficulty };
+  }
+  state.currentScore = state.scores[state.player].score;
+  startGame();
+});
+
+// ──────────────────────────────────────
+//  GAME
+// ──────────────────────────────────────
+function startGame() {
+  const cfg = DIFFICULTE[state.difficulty];
+  state.motActuel = normalizeStr(choixMot());
+  state.lettresTrouvees = new Set();
+  state.nbChances = cfg.chances;
+  state.maxChances = cfg.chances;
+
+  // Update UI header
+  document.getElementById('avatar-letter').textContent = state.player.charAt(0).toUpperCase();
+  document.getElementById('display-name').textContent = state.player;
+  document.getElementById('display-score').textContent = state.currentScore;
+  const badge = document.getElementById('diff-badge');
+  badge.textContent = cfg.label;
+  badge.className = `diff-badge ${state.difficulty}`;
+
+  buildPips();
+  buildKeyboard();
+  renderWord();
+  resetGallows();
+  document.getElementById('gallows-msg').textContent = '';
+
+  showScreen('screen-game');
+}
+
+function buildPips() {
+  const container = document.getElementById('pips-container');
+  container.innerHTML = '';
+  for (let i = 0; i < state.maxChances; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'pip';
+    pip.id = `pip-${i}`;
+    container.appendChild(pip);
+  }
+}
+
+function updatePips() {
+  const lost = state.maxChances - state.nbChances;
+  for (let i = 0; i < state.maxChances; i++) {
+    const pip = document.getElementById(`pip-${i}`);
+    if (pip) pip.className = i < lost ? 'pip lost' : 'pip';
+  }
+}
+
+function buildKeyboard() {
+  const kbd = document.getElementById('keyboard');
+  kbd.innerHTML = '';
+  'abcdefghijklmnopqrstuvwxyz'.split('').forEach(letter => {
+    const btn = document.createElement('button');
+    btn.className = 'key-btn';
+    btn.textContent = letter;
+    btn.id = `key-${letter}`;
+    btn.addEventListener('click', () => handleLetter(letter));
+    kbd.appendChild(btn);
+  });
+}
+
+function renderWord() {
+  const container = document.getElementById('word-display');
+  container.innerHTML = '';
+  for (const ch of state.motActuel) {
+    const box = document.createElement('div');
+    box.className = 'letter-box';
+    box.id = `box-${ch}-${Array.from(state.motActuel).indexOf(ch)}`;
+    if (state.lettresTrouvees.has(ch)) {
+      box.textContent = ch.toUpperCase();
+      box.classList.add('revealed');
+    } else {
+      box.textContent = '';
+    }
+    container.appendChild(box);
+  }
+  // Update each box based on found letters
+  renderWordUpdate();
+}
+
+function renderWordUpdate() {
+  const container = document.getElementById('word-display');
+  const boxes = container.querySelectorAll('.letter-box');
+  Array.from(state.motActuel).forEach((ch, i) => {
+    const box = boxes[i];
+    if (!box) return;
+    if (state.lettresTrouvees.has(ch)) {
+      if (!box.textContent) {
+        box.textContent = ch.toUpperCase();
+        box.classList.add('revealed');
+        setTimeout(() => box.classList.remove('revealed'), 400);
+      }
+    }
+  });
+}
+
+function resetGallows() {
+  BODY_PARTS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('show');
+  });
+  const sadFace = document.getElementById('sad-face');
+  if (sadFace) sadFace.style.opacity = '0';
+}
+
+function showBodyPart(index) {
+  if (index < BODY_PARTS.length) {
+    const el = document.getElementById(BODY_PARTS[index]);
+    if (el) el.classList.add('show');
+  }
+}
+
+function handleLetter(letter) {
+  if (state.lettresTrouvees.has(letter)) {
+    showToast("Déjà essayé !", "info");
+    return;
+  }
+
+  const btn = document.getElementById(`key-${letter}`);
+
+  if (state.motActuel.includes(letter)) {
+    state.lettresTrouvees.add(letter);
+    renderWordUpdate();
+    soundCorrect();
+    if (btn) { btn.classList.add('correct'); btn.disabled = true; }
+    showToast("Bien joué ! ✓", "success", 1200);
+    checkWin();
+  } else {
+    state.lettresTrouvees.add(letter);
+    state.nbChances--;
+    updatePips();
+    soundWrong();
+    if (btn) { btn.classList.add('wrong'); btn.disabled = true; }
+    const partsShown = state.maxChances - state.nbChances - 1;
+    showBodyPart(partsShown);
+
+    // Wiggle gallows
+    const svg = document.getElementById('gallows-svg');
+    svg.classList.add('wiggle');
+    setTimeout(() => svg.classList.remove('wiggle'), 400);
+
+    const msg = GALLOWS_MSGS[Math.min(partsShown + 1, GALLOWS_MSGS.length - 1)];
+    document.getElementById('gallows-msg').textContent = msg;
+
+    showToast("Raté ! ✗", "fail", 1200);
+    checkLose();
+  }
+}
+
+function checkWin() {
+  const allFound = Array.from(state.motActuel).every(ch => state.lettresTrouvees.has(ch));
+  if (allFound) {
+    soundWin();
+    spawnConfetti();
+    const pts = state.nbChances;
+    state.currentScore += pts;
+    state.scores[state.player] = { score: state.currentScore, diff: state.difficulty };
+    saveScores();
+    setTimeout(() => showEndScreen(true, pts), 600);
+  }
+}
+
+function checkLose() {
+  if (state.nbChances <= 0) {
+    soundLose();
+    // Reveal full word
+    Array.from(state.motActuel).forEach(ch => state.lettresTrouvees.add(ch));
+    renderWordUpdate();
+    // Show sad face
+    const sadFace = document.getElementById('sad-face');
+    if (sadFace) sadFace.style.opacity = '1';
+    // Show all remaining body parts
+    BODY_PARTS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('show');
+    });
+    saveScores();
+    setTimeout(() => showEndScreen(false, 0), 800);
+  }
+}
+
+function showEndScreen(win, pts) {
+  document.getElementById('end-result-title').textContent = win ? "🎉 Gagné !" : "💀 Perdu !";
+  document.getElementById('end-result-title').className = `end-result ${win ? 'win' : 'lose'}`;
+  document.getElementById('end-word-reveal').textContent = state.motActuel.toUpperCase();
+  document.getElementById('end-points').textContent = win ? `+${pts}` : `+0`;
+  document.getElementById('end-total-score').textContent = state.currentScore;
+  document.getElementById('end-player-name').textContent = state.player;
+  showScreen('screen-end');
+}
+
+// ──────────────────────────────────────
+//  SCORES TABLE
+// ──────────────────────────────────────
+function showScoresScreen(fromScreen) {
+  state.previousScreen = fromScreen || 'intro';
+  const tbody = document.getElementById('scores-tbody');
+  tbody.innerHTML = '';
+  const entries = Object.entries(state.scores)
+    .sort((a, b) => b[1].score - a[1].score);
+
+  if (entries.length === 0) {
+    document.getElementById('no-scores').style.display = 'block';
+  } else {
+    document.getElementById('no-scores').style.display = 'none';
+    entries.forEach(([name, data], i) => {
+      const tr = document.createElement('tr');
+      if (name === state.player) tr.classList.add('current-player');
+      tr.className += ` rank-${i+1}`;
+      const medals = ['🥇','🥈','🥉'];
+      tr.innerHTML = `
+        <td>${medals[i] || (i+1)}</td>
+        <td>${name}</td>
+        <td class="score-pts">${data.score}</td>
+        <td><span class="diff-badge ${data.diff||'normal'}">${DIFFICULTE[data.diff||'normal'].label}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+  showScreen('screen-scores');
+}
+
+// ──────────────────────────────────────
+//  KEYBOARD SHORTCUT
+// ──────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  const screen = document.querySelector('.screen.active');
+  if (!screen || screen.id !== 'screen-game') return;
+  const letter = e.key.toLowerCase();
+  if (/^[a-z]$/.test(letter)) handleLetter(letter);
+});
+
+// ──────────────────────────────────────
+//  BUTTONS
+// ──────────────────────────────────────
+document.getElementById('btn-rejouer').addEventListener('click', () => startGame());
+document.getElementById('btn-quitter').addEventListener('click', () => {
+  showScreen('screen-intro');
+});
+document.getElementById('btn-scores-end').addEventListener('click', () => showScoresScreen('end'));
+document.getElementById('btn-scores').addEventListener('click', () => showScoresScreen('intro'));
+document.getElementById('btn-back-scores').addEventListener('click', () => {
+  showScreen(`screen-${state.previousScreen}`);
+});
+
+document.getElementById('btn-sound').addEventListener('click', () => {
+  state.soundOn = !state.soundOn;
+  document.getElementById('btn-sound').textContent = state.soundOn ? '🔊' : '🔇';
+  showToast(state.soundOn ? "Son activé" : "Son désactivé", "info", 1000);
+});
+
+document.getElementById('btn-theme').addEventListener('click', () => {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  document.getElementById('btn-theme').textContent = state.theme === 'dark' ? '🌙' : '☀️';
+});
+
+// ──────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────
+state.scores = loadScores();
+document.getElementById('input-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-start').click();
+});
+</script>
+</body>
+</html>
